@@ -8,7 +8,6 @@ from sigkit.impairments.phase_shift import PhaseShift
 from sigkit.transforms.phase_shift import ApplyPhaseShift
 
 
-
 @pytest.mark.parametrize("phase_offset", [0.0, math.pi / 4, -math.pi / 2])
 def test_numpy_phase_shift_fixed_offset(phase_offset):
     N = 8
@@ -37,7 +36,6 @@ def test_numpy_phase_shift_random_in_range(phase_range):
     out = imp.apply(sig)
 
     first_phase = np.arctan2(np.imag(out.samples[0]), np.real(out.samples[0]))
-
     if first_phase < -np.pi:
         first_phase += 2 * np.pi
     elif first_phase > np.pi:
@@ -51,21 +49,21 @@ def test_numpy_phase_shift_random_in_range(phase_range):
 def test_torch_phase_shift_fixed_offset(phase_offset):
     N = 4096
     theta = 2 * math.pi * torch.arange(N, dtype=torch.float32) / N
-    x = torch.stack([torch.cos(theta), torch.sin(theta)], dim=0)  # shape: (2, 4096)
+    real = torch.cos(theta)
+    imag = torch.sin(theta)
+    x_complex = (real + 1j * imag).to(torch.complex64)
 
     imp = ApplyPhaseShift(phase_offset=phase_offset)
-    y = imp(x)
+    y_complex = imp(x_complex)
 
-    samples_np = (
-        (x[0].numpy() + 1j * x[1].numpy()) * np.exp(1j * phase_offset)
-    ).astype(np.complex64)
-    expected_I = np.real(samples_np).astype(np.float32)
-    expected_Q = np.imag(samples_np).astype(np.float32)
+    phase_factor = torch.exp(1j * torch.tensor(phase_offset, dtype=torch.float32))
+    expected_complex = x_complex * phase_factor
 
-    assert y.shape == x.shape
-    assert y.dtype == torch.float32
-    assert torch.allclose(y[0], torch.from_numpy(expected_I), atol=1e-6)
-    assert torch.allclose(y[1], torch.from_numpy(expected_Q), atol=1e-6)
+    assert y_complex.dtype == torch.complex64
+    assert y_complex.shape == torch.Size([4096])
+
+    assert torch.allclose(y_complex.real, expected_complex.real, atol=1e-6)
+    assert torch.allclose(y_complex.imag, expected_complex.imag, atol=1e-6)
 
 
 @pytest.mark.parametrize("phase_range", [(-np.pi, np.pi), (0.0, np.pi / 2)])
@@ -73,16 +71,14 @@ def test_torch_phase_shift_random_in_range(phase_range):
     torch.manual_seed(1234)
 
     N = 4096
-    x = torch.zeros(2, N, dtype=torch.float32)
-    x[0] = 1.0  # I = 1
-    x[1] = 0.0  # Q = 0
+    x_complex = torch.ones(N, dtype=torch.complex64)
 
     imp = ApplyPhaseShift(phase_offset=phase_range)
-    y = imp(x)
+    y_complex = imp(x_complex)
 
-    first_I = y[0, 0].item()
-    first_Q = y[1, 0].item()
-    first_phase = math.atan2(first_Q, first_I)
+    first_real = y_complex.real[0].item()
+    first_imag = y_complex.imag[0].item()
+    first_phase = math.atan2(first_imag, first_real)
 
     if first_phase < -np.pi:
         first_phase += 2 * np.pi

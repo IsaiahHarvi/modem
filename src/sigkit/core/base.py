@@ -33,15 +33,10 @@ class Signal:
     def to_tensor(self) -> torch.Tensor:
         """Convert the samples parameter to a PyTorch Tensor.
 
-        Convert into a float32 tensor of shape (2, N),
-        where row 0 = real (I) and row 1 = imag (Q).
+        Convert into a complex64 tensor of shape (N,),
         Note that for our training pipeline, N should be 4096.
         """
-        return torch.from_numpy(
-            np.stack([np.real(self.samples), np.imag(self.samples)], axis=0).astype(
-                np.float32
-            )
-        )
+        return torch.from_numpy(self.samples)
 
     def to_baseband(self) -> "Signal":
         """Convert the Signal to baseband by removing the carrier frequency.

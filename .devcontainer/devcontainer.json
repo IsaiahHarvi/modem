@@ -11,6 +11,7 @@
       "configureZshAsDefaultShell": true
     },
     "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/git-lfs:1": {"autoPull": false},
     "ghcr.io/devcontainers/features/sshd:1": {},
     "ghcr.io/devcontainers/features/python:1": {
       "version": "3.11"
@@ -27,7 +28,9 @@
       ]
     }
   },
-
+  "hostRequirements": {
+    "gpu": "optional"
+  },
   "runArgs": [
     "--shm-size=4g",
     "--name",
