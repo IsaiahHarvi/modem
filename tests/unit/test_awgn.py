@@ -12,13 +12,21 @@ from sigkit.core.base import Signal
 def test_awgn_torch(snr_db):
     awgn = ApplyAWGN(snr_db=snr_db)
 
-    theta = 2 * torch.pi * torch.arange(4096, dtype=torch.float32) / 4096
-    x = torch.stack([torch.cos(theta), torch.sin(theta)], dim=0)  # (2, 4096)
+    N = 4096
+    theta = 2 * torch.pi * torch.arange(N, dtype=torch.float32) / N
+    real = torch.cos(theta)
+    imag = torch.sin(theta)
+    x_complex = (real + 1j * imag).to(torch.complex64)
 
-    y = awgn(x)
-    assert y.shape == x.shape, "Output shape should match input shape"
+    y_complex = awgn(x_complex)
 
-    measured = estimate_snr(x, y)
+    y_i = y_complex.real
+    y_q = y_complex.imag
+    y_iq = torch.stack([y_i, y_q], dim=0)
+
+    x_iq = torch.stack([real, imag], dim=0)
+
+    measured = estimate_snr(x_iq, y_iq)
     assert abs(measured - snr_db) < 1.0, f"measured {measured:.2f} dB != target {snr_db} dB"
 
 

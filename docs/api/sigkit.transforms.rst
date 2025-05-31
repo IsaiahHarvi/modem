@@ -24,3 +24,11 @@ sigkit.transforms.phase\_shift module
    :members:
    :show-inheritance:
    :undoc-members:
+
+sigkit.transforms.utils module
+------------------------------
+
+.. automodule:: sigkit.transforms.utils
+   :members:
+   :show-inheritance:
+   :undoc-members:
